@@ -1,0 +1,92 @@
+package com.example.practicalexam;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity {
+    private EditText ssnEditText;
+    private EditText nameEditText;
+    private EditText ageEditText;
+    private Spinner departmentSpinner; // Added Spinner declaration
+    private Button addButton;
+    private RecyclerView employeeListView;
+    private EmployeeAdapter employeeAdapter;
+    private ArrayList<Employee> employeeList;
+    private employeeDB databaseHelper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        ssnEditText = findViewById(R.id.ssn);
+        nameEditText = findViewById(R.id.name);
+        ageEditText = findViewById(R.id.age);
+        departmentSpinner = findViewById(R.id.department_spinner);
+        addButton = findViewById(R.id.add_button);
+        employeeListView = findViewById(R.id.employee_list);
+
+        databaseHelper = new employeeDB(this);
+        employeeList = new ArrayList<>();
+        employeeList.addAll(databaseHelper.getAllEmployees());
+
+        employeeAdapter = new EmployeeAdapter(this, employeeList);
+        employeeListView.setLayoutManager(new LinearLayoutManager(this));
+        employeeListView.setAdapter(employeeAdapter);
+
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.departments_array, android.R.layout.simple_spinner_item);
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+
+        departmentSpinner.setAdapter(adapter);
+
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Retrieve values from EditText fields
+                String ssn = ssnEditText.getText().toString().trim();
+                String name = nameEditText.getText().toString().trim();
+                int age = Integer.parseInt(ageEditText.getText().toString().trim());
+
+                // Retrieve selected department from Spinner
+                String department = departmentSpinner.getSelectedItem().toString().trim();
+
+                // Create a new Employee object
+                Employee newEmployee = new Employee(ssn, name, age, department);
+                databaseHelper.addEmployee(newEmployee);
+
+                // Update the employeeList and notify the adapter
+                employeeList.add(newEmployee);
+                employeeAdapter.notifyDataSetChanged();
+
+                // Clear EditText fields
+                ssnEditText.setText("");
+                nameEditText.setText("");
+                ageEditText.setText("");
+                departmentSpinner.setSelection(0); // Reset Spinner selection to the first item
+
+                Toast.makeText(MainActivity.this, "Employee Data Added Successfully!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        databaseHelper.close();
+    }
+}
