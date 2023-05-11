@@ -1,0 +1,72 @@
+package com.example.practicalexam;
+
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import com.example.practicalexam.Employee;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class employeeDB extends SQLiteOpenHelper {
+    private static final String DATABASE_NAME = "employee.db";
+    private static final int DATABASE_VERSION = 1;
+
+    public employeeDB(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        // Create the employee table
+        db.execSQL("CREATE TABLE employee (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "ssn TEXT, name TEXT, age INTEGER, department TEXT);");
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Drop and recreate the employee table if the database version changes
+        db.execSQL("DROP TABLE IF EXISTS employee;");
+        onCreate(db);
+    }
+
+    public void addEmployee(Employee employee) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("ssn", employee.getSsn());
+        values.put("name", employee.getName());
+        values.put("age", employee.getAge());
+        values.put("department", employee.getDepartment());
+        db.insert("employee", null, values);
+        db.close();
+    }
+
+    public List<Employee> getAllEmployees() {
+        List<Employee> employees = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM employee", null);
+        if (cursor.moveToFirst()) {
+            int ssnIndex = cursor.getColumnIndex("ssn");
+            int nameIndex = cursor.getColumnIndex("name");
+            int ageIndex = cursor.getColumnIndex("age");
+            int deptIndex = cursor.getColumnIndex("department");
+            do {
+                String ssn = cursor.getString(ssnIndex);
+                String name = cursor.getString(nameIndex);
+                int age = cursor.getInt(ageIndex);
+                String department = cursor.getString(deptIndex);
+                Employee employee = new Employee(ssn, name, age, department);
+                employees.add(employee);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return employees;
+    }
+
+}
+
